@@ -1,16 +1,37 @@
-# app_climatica
+# 🌤️ App_climatica – Flutter
 
-A new Flutter project.
+**App_climatica** es una aplicación móvil desarrollada en **Flutter** que permite consultar el clima actual en dos modalidades:
+1. A partir de la **ubicación geográfica del dispositivo**
+2. Introduciendo manualmente el **nombre de una ciudad o población**
 
-## Getting Started
+Esta es la **primera versión finalizada y funcional** del proyecto. Utiliza la API de **OpenWeatherMap** para obtener información meteorológica en tiempo real.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 📱 Funcionalidades principales
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- 🔍 Consulta automática del clima actual mediante geolocalización
+- 🏙️ Búsqueda manual por nombre de ciudad
+- 🌡️ Visualización de:
+    - Temperatura actual
+    - Sensación térmica
+    - Estado del cielo (despejado, nublado, lluvia, etc.)
+    - Icono del clima correspondiente
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🧰 Tecnologías utilizadas
+
+- **Flutter** (Dart)
+- **Geolocator** – Para obtener la ubicación del dispositivo
+- **HTTP** – Para realizar llamadas a la API
+- **OpenWeatherMap API** – Fuente de datos meteorológicos
+
+---
+
+## 📸 Capturas de pantalla
+
+# Pantalla por ubicación:
+![Pantalla por ubicación](screenshots/current_location.jpg)
+
+# Pantalla por ciudad:
+![Pantalla por ciudad](screenshots/search_city.jpg)
