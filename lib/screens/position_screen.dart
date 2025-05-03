@@ -1,8 +1,11 @@
-import 'package:app_climatica/widgets/weather_card.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import '../services/weather.dart';
-import '../services/weather_service.dart';
+import 'package:app_climatica/widgets/weather_card.dart';
+import 'package:app_climatica/widgets/forecast_chart.dart';
+import 'package:app_climatica/services/location_service.dart';
+import 'package:app_climatica/services/weather_service.dart';
+import 'package:app_climatica/services/weather.dart';
+
+import '../services/weather_forecast.dart';
 
 class LocationInformationScreen extends StatefulWidget {
   const LocationInformationScreen({Key? key}) : super(key: key);
@@ -13,8 +16,8 @@ class LocationInformationScreen extends StatefulWidget {
 
 class _LocationInformationScreenState extends State<LocationInformationScreen>
     with AutomaticKeepAliveClientMixin {
-
   Weather? _weatherData;
+  List<ForecastPoint>? _forecastData;
 
   @override
   bool get wantKeepAlive => true;
@@ -22,52 +25,55 @@ class _LocationInformationScreenState extends State<LocationInformationScreen>
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    _loadData();
   }
 
-  Future<void> _getCurrentLocation() async {
-
+  Future<void> _loadData() async {
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        return;
-      }
-
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
+      final position = await LocationService().getCurrentLocation();
+      print(position);
       final weather = await WeatherService().fetchWeatherByLocation(position);
+      final forecast = await WeatherService().fetchForecastByLocation(position);
 
       setState(() {
         _weatherData = weather;
+        _forecastData = forecast;
       });
     } catch (e, stacktrace) {
-
-      debugPrint("[WEATHER ERROR] $stacktrace");
+      debugPrint("[ERROR] $e\n$stacktrace");
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // ✅ CORRECTO para usar AutomaticKeepAliveClientMixin
+    super.build(context);
+
+    if (_weatherData == null || _forecastData == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Clima')),
-      body: _weatherData == null
-          ? const Center(child: CircularProgressIndicator())
-          : WeatherCard(weather: _weatherData!),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            WeatherCard(weather: _weatherData!),
+            const SizedBox(height: 24),
+            Text(
+              "Próximas horas",
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 200,
+              child: ForecastChart(forecastData: _forecastData!,),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
