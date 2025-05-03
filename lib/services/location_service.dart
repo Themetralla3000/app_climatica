@@ -1,47 +1,78 @@
 import 'package:flutter/foundation.dart'; // Necesario para debugPrint
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationService {
+  static const _cacheLatKey = 'cached_latitude';
+  static const _cacheLonKey = 'cached_longitude';
+  static const _cacheTimeKey = 'cached_location_time';
+  static const _cacheDurationMinutes = 15;
+
+
   Future<Position> getCurrentLocation() async {
+    final now = DateTime.now();
+    final prefs = await SharedPreferences.getInstance();
+
+    final cachedLat = prefs.getDouble(_cacheLatKey);
+    final cachedLon = prefs.getDouble(_cacheLonKey);
+    final cachedTimeStr = prefs.getString(_cacheTimeKey);
+
+    if(cachedTimeStr!=null&&cachedLon!=null&&cachedLat!=null){
+      final cachedTime=DateTime.parse(cachedTimeStr);
+
+      if(cachedTime!=null &&
+        now.difference(cachedTime).inMinutes <_cacheDurationMinutes){
+
+        return Position(
+          longitude: cachedLon,
+          latitude: cachedLon,
+          timestamp: cachedTime,
+          accuracy: 0,
+          altitude: 0,
+          heading: 0,
+          speed: 0,
+          speedAccuracy: 0,
+          altitudeAccuracy: 0,
+          headingAccuracy: 0,
+        );
+      }
+    }
+    //no cache or to old cache
+
     bool serviceEnabled;
     LocationPermission permission;
 
-    debugPrint("[LocationService] Verificando si los servicios de ubicación están habilitados...");
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      debugPrint("[LocationService] ❌ Los servicios de ubicación están desactivados.");
       throw Exception("Los servicios de ubicación no están habilitados.");
     }
-    debugPrint("[LocationService] ✅ Servicios de ubicación habilitados.");
 
-    debugPrint("[LocationService] Comprobando permisos...");
     permission = await Geolocator.checkPermission();
 
     if (permission == LocationPermission.denied) {
-      debugPrint("[LocationService] ⚠️ Permiso denegado, solicitando...");
       permission = await Geolocator.requestPermission();
 
       if (permission == LocationPermission.denied) {
-        debugPrint("[LocationService] ❌ Permiso de ubicación denegado después de solicitar.");
         throw Exception("Permiso de ubicación denegado.");
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      debugPrint("[LocationService] ❌ Permiso de ubicación denegado permanentemente.");
       throw Exception("Permiso de ubicación denegado de forma permanente.");
     }
-
-    debugPrint("[LocationService] ✅ Permisos concedidos. Obteniendo ubicación...");
 
     try {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-      debugPrint("[LocationService] 📍 Ubicación obtenida: (${position.latitude}, ${position.longitude})");
+
+
+      await prefs.setDouble(_cacheLatKey, position.latitude);
+      await prefs.setDouble(_cacheLonKey, position.longitude);
+      await prefs.setString(_cacheTimeKey, now.toIso8601String());
+
       return position;
     } catch (e) {
-      debugPrint("[LocationService] ❌ Error al obtener la ubicación: $e");
       rethrow;
     }
   }

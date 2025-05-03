@@ -39,16 +39,17 @@ class WeatherService{
     else throw Exception("error loading weather data from location");
   }
 
-  Future<List<WeatherForecast>> fetchForecastByCity(String city) async{
+  Future<dynamic> fetchForecastByCity(String city) async{
     final apiKey=dotenv.env['api_key'];
     final url =Uri.parse('$baseUrl/forecast?q=$city&appid=$apiKey&units=metric&lang=es');
 
     final response =await http.get(url);
-    if(response.statusCode==200){
-      final data=jsonDecode(response.body);
-      final List forecasts= data['list'];
-      List<WeatherForecast> result=forecasts.map((item)=> WeatherForecast.fromJson(item)).toList();
-      return result;
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      final List<dynamic> forecastList = data['list'];
+      return forecastList
+          .map((item) => ForecastPoint.fromJson(item))
+          .toList();
     }
     else{
       throw Exception("error loading forecast from city");
@@ -56,18 +57,19 @@ class WeatherService{
 
   }
 
-  Future<List<WeatherForecast>> fetchForecastByLocation(Position position) async{
+  Future<List<ForecastPoint>> fetchForecastByLocation(Position position) async{
     final lat=position.latitude;
     final lon=position.longitude;
     final apiKey= dotenv.env['api_key'];
     final url =Uri.parse('$baseUrl/forecast?lat=$lat&lon=$lon&units=metric&lang=es&appid=$apiKey');
 
     final response = await http.get(url);
-    if(response.statusCode==200){
-      final data= json.decode(response.body);
-      final List forecasts=data['list'];
-      List<WeatherForecast> result=forecasts.map((item)=> WeatherForecast.fromJson(item)).toList();
-      return result;
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      final List<dynamic> forecastList = data['list'];
+      return forecastList
+          .map((item) => ForecastPoint.fromJson(item))
+          .toList();
     }
     else throw Exception("error loading weather data from location");
   }
