@@ -8,7 +8,6 @@ class LocationService {
   static const _cacheTimeKey = 'cached_location_time';
   static const _cacheDurationMinutes = 15;
 
-
   Future<Position> getCurrentLocation() async {
     final now = DateTime.now();
     final prefs = await SharedPreferences.getInstance();
@@ -17,15 +16,13 @@ class LocationService {
     final cachedLon = prefs.getDouble(_cacheLonKey);
     final cachedTimeStr = prefs.getString(_cacheTimeKey);
 
-    if(cachedTimeStr!=null&&cachedLon!=null&&cachedLat!=null){
-      final cachedTime=DateTime.parse(cachedTimeStr);
+    if (cachedTimeStr != null && cachedLon != null && cachedLat != null) {
+      final cachedTime = DateTime.parse(cachedTimeStr);
 
-      if(cachedTime!=null &&
-        now.difference(cachedTime).inMinutes <_cacheDurationMinutes){
-
+      if (now.difference(cachedTime).inMinutes < _cacheDurationMinutes) {
         return Position(
           longitude: cachedLon,
-          latitude: cachedLon,
+          latitude: cachedLat,
           timestamp: cachedTime,
           accuracy: 0,
           altitude: 0,
@@ -37,21 +34,16 @@ class LocationService {
         );
       }
     }
-    //no cache or to old cache
 
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    //if invalid cache, obtain a new one
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw Exception("Los servicios de ubicación no están habilitados.");
     }
 
-    permission = await Geolocator.checkPermission();
-
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-
       if (permission == LocationPermission.denied) {
         throw Exception("Permiso de ubicación denegado.");
       }
@@ -62,11 +54,10 @@ class LocationService {
     }
 
     try {
-      Position position = await Geolocator.getCurrentPosition(
+        Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-
-
+      //save the location into cache
       await prefs.setDouble(_cacheLatKey, position.latitude);
       await prefs.setDouble(_cacheLonKey, position.longitude);
       await prefs.setString(_cacheTimeKey, now.toIso8601String());
