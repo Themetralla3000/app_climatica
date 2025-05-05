@@ -1,6 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-
 import '../services/weather_forecast.dart';
 
 class ForecastChart extends StatelessWidget {
@@ -10,6 +9,21 @@ class ForecastChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final spots = forecastData
+        .asMap()
+        .entries
+        .map((e) => FlSpot(e.key.toDouble(), e.value.temperature))
+        .toList();
+
+    final lineChartBarData = LineChartBarData(
+      spots: spots,
+      isCurved: true,
+      dotData: FlDotData(show: true),
+      belowBarData: BarAreaData(show: false),
+      barWidth: 2,
+      color: Colors.blue,
+    );
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
@@ -17,6 +31,9 @@ class ForecastChart extends StatelessWidget {
         height: 250,
         child: LineChart(
           LineChartData(
+            lineBarsData: [lineChartBarData],
+            minY: forecastData.map((e) => e.temperature).reduce((a, b) => a < b ? a : b) - 2,
+            maxY: forecastData.map((e) => e.temperature).reduce((a, b) => a > b ? a : b) + 2,
             titlesData: FlTitlesData(
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(showTitles: true, reservedSize: 40),
@@ -24,7 +41,7 @@ class ForecastChart extends StatelessWidget {
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  interval: 1, //number of tags per point
+                  interval: 1,
                   getTitlesWidget: (value, meta) {
                     int index = value.toInt();
                     if (index >= 0 && index < forecastData.length) {
@@ -41,22 +58,38 @@ class ForecastChart extends StatelessWidget {
               rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
-            gridData: FlGridData(show: true),
+            gridData: FlGridData(show: false),
             borderData: FlBorderData(show: true),
-            lineBarsData: [
-              LineChartBarData(
-                spots: forecastData.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final point = entry.value;
-                  return FlSpot(index.toDouble(), point.temperature);
+            showingTooltipIndicators: List.generate(
+              spots.length,
+                  (index) => ShowingTooltipIndicators([
+                LineBarSpot(
+                  lineChartBarData,
+                  0,
+                  spots[index],
+                ),
+              ]),
+            ),
+            lineTouchData: LineTouchData(
+              enabled: true,
+              handleBuiltInTouches: false, 
+              touchTooltipData: LineTouchTooltipData(
+                tooltipBgColor: Colors.white.withOpacity(0.9),
+                tooltipRoundedRadius: 6,
+                tooltipPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
+                  return LineTooltipItem(
+                    '${spot.y.toStringAsFixed(1)}°C',
+                    const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
                 }).toList(),
-                isCurved: true,
-                dotData: FlDotData(show: true),
-                belowBarData: BarAreaData(show: false),
               ),
-            ],
-            minY: forecastData.map((e) => e.temperature).reduce((a, b) => a < b ? a : b) - 2,
-            maxY: forecastData.map((e) => e.temperature).reduce((a, b) => a > b ? a : b) + 2,
+            ),
+
           ),
         ),
       ),
